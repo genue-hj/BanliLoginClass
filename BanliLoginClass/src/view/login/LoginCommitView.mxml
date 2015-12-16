@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" creationComplete="onCreateComplete(event)"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="350" height="450" horizontalCenter="0" verticalCenter="0" 
+		 xmlns:input="view.login.input.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.doer.config.AppConf;
+			import com.doer.config.ComplexConf;
+			
+			import mx.events.FlexEvent;
+			
+			private var loader:URLLoader = null;
+			
+			private var schoolList:Array = null;
+			
+			protected function onCreateComplete(event:FlexEvent):void
+			{
+				
+				loader = new URLLoader();
+				
+				loader.load(new URLRequest("http://" + AppConf.webAddr + "/institutionInfos.htm?institutionName="));
+				
+				loader.addEventListener(Event.COMPLETE,onLoadComplete);
+				
+				userInput.btnChange.addEventListener(MouseEvent.CLICK,onChangeSweep);
+				bordInput.btnChange.addEventListener(MouseEvent.CLICK,onChangeInput);
+			}
+			
+			protected function onLoadComplete(e:Event):void
+			{
+				var data:Object = JSON.parse(loader.data);
+				
+				var arr:Array = new Array();
+				
+				for(var i:int = 0; i < data.length; i ++)
+				{
+					arr.push(data[i]);
+					
+				}
+				
+				schoolList = arr;
+				
+				userInput.invalidate(schoolList);
+				bordInput.invalidate(schoolList);
+			}
+			
+			private function onChangeSweep(e:MouseEvent):void
+			{
+				userInput.visible = false;
+				bordInput.visible = true;
+				
+				ComplexConf.isBordMode = true;
+			}
+			
+			private function onChangeInput(e:MouseEvent):void
+			{
+				userInput.visible = true;
+				bordInput.visible = false;
+				
+				ComplexConf.isBordMode = false;
+			}
+			
+			public function onDestroy():void
+			{
+				userInput.btnChange.removeEventListener(MouseEvent.CLICK,onChangeSweep);
+				bordInput.btnChange.removeEventListener(MouseEvent.CLICK,onChangeInput);
+			}
+			
+			public function showSweep():void
+			{
+				userInput.visible = false;
+				bordInput.visible = false;
+				
+				sweep.visible = true;
+				
+				sweep.showSweep();
+			}
+			
+			public function reset():void
+			{
+				userInput.visible = true;
+				
+				bordInput.visible = false;
+				sweep.visible = false;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:Rect left="0" right="0" top="0" bottom="0" radiusX="8" radiusY="8">
+		<s:fill>
+			<s:SolidColor color="0xffffff" alpha="0.8"  />
+		</s:fill>
+	</s:Rect>
+	
+	<s:Group left="0" right="0" top="20" height="150">
+		
+		<s:Image source="@Embed('assets/login/icon_banni_logo.png')" horizontalCenter="0" />
+		
+		<s:Label bottom="0" color="#17BFB2" fontSize="25" fontWeight="normal"
+				 horizontalCenter="0" text="板狸联合教室"/>
+		
+		
+	</s:Group>
+	
+	
+	<input:LoginUserInputView id="userInput" visible="false" left="10" right="10" bottom="20" height="250"  />
+	
+	<input:LoginBordInputView id="bordInput" left="10" right="10" bottom="20" height="250" />
+	
+	<input:LoginSweepView id="sweep" visible="false" horizontalCenter="0" bottom="20" height="250" />
+	
+	
+</s:Group>

@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" minWidth="1000" minHeight="550"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"  implements="com.doer.interfaces.IMainClass"
+			   creationComplete="onCreateComplete(event)" resize="onResize(event)" 
+			    xmlns:view="view.*" xmlns:login="view.login.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace view "view.*";
+		@namespace nav "view.nav.*";
+		@namespace blackbord "view.blackbord.*";
+		
+		mx|ToolTip{
+			
+			fontSize:14;
+			color : #393939;
+			fontFamily : "微软雅黑,Microsoft Yahei";
+			backgroundColor : #79cded;
+			
+		}
+		
+		s|Scroller{
+			skinClass : ClassReference("skins.common.ScrollerSkin")
+		}
+		
+		global{
+			
+			fontFamily : "微软雅黑,Microsoft Yahei";
+			focusThickness : 0;
+			
+		}
+		
+		s|ComboBox
+		{
+			skinClass : ClassReference("skins.live.ComboxSkin")
+		}
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.doer.common.Tools;
+			import com.doer.common.mouse.MouseFactory;
+			import com.doer.common.mouse.style.EraserMouseStyle;
+			import com.doer.common.mouse.style.PenMouseStyle;
+			import com.doer.config.AppConf;
+			import com.doer.config.ComplexConf;
+			import com.doer.config.ModeTypes;
+			import com.doer.config.ScreenParams;
+			import com.doer.language.LanManager;
+			import com.doer.manager.MetaManager;
+			import com.doer.net.login.LoginController;
+			import com.doer.net.socket.SocketController;
+			import com.doer.resource.ResManager;
+			import com.doer.vmode.VideoAnalysis;
+			import com.doers.utils.ScheduleEvent;
+			import com.metaedu.client.messages.nebula.NebulaParticipantType;
+			import com.metaedu.client.messages.nebula.NebulaPlatformType;
+			import com.metaedu.client.messages.nebula.NebulaScreenType;
+			
+			import flash.utils.setInterval;
+			import flash.utils.setTimeout;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			import mx.events.ResourceEvent;
+			import mx.resources.ResourceManager;
+			
+			import view.ConversationPanel;
+			import view.login.LoginView;
+			import view.schedule.ScheduleContent;
+			
+			
+			[Embed(source="assets/font/Inconsolata.otf",fontName="Inno",mimeType="application/x-font")]
+			public var InnoFont:Class;
+			
+			[Bindable]
+			private var resManager:ResManager = ResManager.getInstance();
+			
+			private var schedule:ScheduleContent = null;
+			
+			private var mainClass:ConversationPanel = null;
+			
+			protected function onCreateComplete(event:FlexEvent):void
+			{
+				MouseFactory.getInstance().regist(EraserMouseStyle,"eraser");
+				
+				addEventListener(ScheduleEvent.Schedule_Nail_Click,onNailHandler);
+				addEventListener(ScheduleEvent.Schedule_Quit,onScheduleQuit);
+				
+				setScreen();
+				
+				try
+				{
+					ExternalInterface.addCallback("onChangeScreenMode",onChangeScreenMode);
+					
+				} 
+				catch(error:Error) 
+				{
+					
+				}
+				
+			}
+			
+			private function setScreen():void
+			{
+				ComplexConf.screens = new Vector.<ScreenParams>();
+				
+				if(parameters['mainScreen'] != null)
+				{
+					var mainScreen:Array = parameters['mainScreen'].split("*");
+					
+					ComplexConf.screens.push(new ScreenParams(Number(mainScreen[0]),Number(mainScreen[1])));
+					
+				}
+				
+				if(parameters['subScreen'] != null)
+				{
+					var subScreen:Array = parameters['subScreen'].split("*");
+					
+					ComplexConf.screens.push(new ScreenParams(Number(subScreen[0]),Number(subScreen[1])));
+					
+				}
+				
+				onChangeScreenMode();
+			}
+			
+			/**
+			 * 登录输入完成
+			 * **/
+			public function onLoginInputComplete():void
+			{
+				
+				AppConf.platform = NebulaPlatformType.BOARD;
+				AppConf.deviceMark = ComplexConf.bordAccount;
+				
+				if(mainClass == null)
+					addMainClass();
+				else
+					mainClass.connect();
+				
+				mainClass.visible = false;
+			}
+			
+			
+			/**
+			 * 连接成功
+			 * **/
+			public function onConnect():void
+			{
+				if(ComplexConf.isBordMode)
+					loginView.commitView.showSweep();
+				else
+				{
+					loginView.visible = false;
+					
+					schedule = new ScheduleContent();
+					
+					mainContent.addElementAt(schedule,0);
+					
+					schedule.setPersonInfo(ComplexConf.surname + ComplexConf.name);
+					
+				}
+
+			}
+			
+			/**
+			 * 登录成功
+			 * **/
+			public function onLogin():void
+			{
+				
+				if(schedule != null)
+				{
+					schedule.onDestroy();
+					
+					mainContent.removeElement(schedule);
+					
+					schedule = null;
+					
+				}
+				
+				
+				loginView.visible = false;
+				
+				mainClass.visible = true;
+			}
+			
+			/**
+			 * 登出课堂
+			 * **/
+			public function onLogout():void
+			{
+				mainClass.reset();
+				mainClass.visible = false;
+				
+				if(ComplexConf.isBordMode)
+				{
+					loginView.visible = true;
+					
+					//loginView.reset();
+					
+				}else
+				{
+					schedule = new ScheduleContent();
+					
+					mainContent.addElementAt(schedule,0);
+					
+					schedule.setPersonInfo(ComplexConf.surname + ComplexConf.name);
+					
+				}
+				
+			}
+			
+			/**
+			 * 登出
+			 * **/
+			public function onQuit():void
+			{
+				removeMainClass();
+				
+				loginView.visible = true;
+				
+				schedule.onDestroy();
+				
+				mainContent.removeElement(schedule);
+				
+				schedule = null;
+			}
+			
+			
+			
+			public function get alertContent():Group
+			{
+				return alertContainer;
+			}
+			
+			private function addMainClass():void
+			{
+				if(mainClass == null)
+				{
+					mainClass = new ConversationPanel();
+					mainClass.isAutoConnect = true;
+					mainContent.addElement(mainClass);
+				}
+			}
+			
+			private function removeMainClass():void
+			{
+				if(mainClass != null)
+				{
+					mainClass.onDestroy();
+					
+					mainContent.removeElement(mainClass);
+					
+					mainClass = null;
+				}
+			}
+			
+			private function onScheduleQuit(e:ScheduleEvent):void
+			{
+				mainClass.quit();
+			}
+			
+			private function onNailHandler(e:ScheduleEvent):void
+			{
+				ComplexConf.complexId = e.param.id;
+				
+				mainClass.visible = true;
+				
+				mainClass.login();
+			}
+			
+			public function onChangeScreenMode(args:String = null):void
+			{
+				dispatchEvent(new Event("Size_Change"));
+				
+				if(ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_LEFT)
+				{
+					if(ComplexConf.screens != null)
+					{
+						pluginContent.width = ComplexConf.screens[0].screenWidth;
+						
+						pluginContent.x = 0;
+						
+					}else
+					{
+						pluginContent.width = this.width / 2;
+						
+						pluginContent.x = 0;
+					}
+				}else if(ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_MIDDLE)
+				{
+					pluginContent.width = this.width / 2
+					
+					pluginContent.x = this.width / 2 - pluginContent.width / 2;
+					
+					
+				}else if(ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_RIGHT)
+				{
+					if(ComplexConf.screens != null)
+					{
+						pluginContent.width = ComplexConf.screens[1].screenWidth;
+						
+						pluginContent.x = this.width - pluginContent.width;
+						
+					}else
+					{
+						pluginContent.width = this.width / 2;
+						
+						pluginContent.x = this.width - pluginContent.width;
+					}
+				}
+				else
+				{ 
+					pluginContent.width = this.width;
+					pluginContent.x = 0;
+				}
+					
+				
+				
+			}
+			
+			[Bindable(event="Size_Change")]
+			private function getSubContentSize():int
+			{
+				var w:Number = 0;
+				
+				if(ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_LEFT || ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_RIGHT || ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_MIDDLE)
+				{
+					w = ComplexConf.screens[1].screenWidth;
+			
+				}else
+				{
+					w = 0;
+				}
+				
+				return w;
+			}
+			
+			protected function onResize(event:ResizeEvent):void
+			{
+				if(pluginContent != null)
+				onChangeScreenMode();
+				
+				invalidateDisplayList();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Group id="mainBackground" left="0" right="{subBackground.width}" top="0" bottom="0">
+		<s:Rect left="0" right="0" top="0" bottom="0">
+			<s:fill>
+				<s:BitmapFill source="@Embed('assets/login/login_bg.jpg')" smooth="true" />
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<s:Group id="subBackground" width="{getSubContentSize()}" right="0" top="0" bottom="0">
+		<s:Rect left="0" right="0" top="0" bottom="0">
+			<s:fill>
+				<s:BitmapFill source="@Embed('assets/login/login_bg.jpg')" smooth="true" />
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<s:Group id="pluginContent" top="0" bottom="0">
+		
+		<login:LoginView id="loginView" left="0" right="0" top="0" bottom="0" />
+		
+		
+	</s:Group>
+	
+	<s:Group id="mainContent"  top="0" bottom="0"  left="0" right="0">
+		
+		
+	</s:Group>
+
+	<!--自定义弹出层-->
+	<s:Group id="alertContainer" width="100%" height="100%" >
+		
+	</s:Group>
+</s:Application>

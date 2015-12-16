@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="320" height="240">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.doer.config.ComplexConf;
+			
+			import mx.events.FlexEvent;
+			
+			public var isSubCamera:Boolean = false;
+			
+			private var video:Video = null;
+			
+			/**
+			 * 设置摄像头
+			 * **/
+			public function setCamera():void
+			{
+				onDestroy();
+				
+				var arr:Array = ComplexConf.videoDetail1.split("x");
+				
+				this.height = this.width / (Number(arr[0]) / Number(arr[1]));
+				
+				if(video == null)
+				{
+					video = new Video(this.width,this.height);
+					ui.addChild(video);
+				}
+				
+				var index:int = isSubCamera ? ComplexConf.subCameraIndex : ComplexConf.mainCameraIndex;
+				
+				var camera:Camera = Camera.getCamera(index.toString());
+				
+				if(camera != null)
+				{
+					camera.setMode(this.width,this.height,30);
+					
+					video.attachCamera(camera);
+					
+				}
+			}
+			
+			/**
+			 * 销毁资源
+			 * **/
+			public function onDestroy():void
+			{
+				if(video != null)
+				{
+					video.attachCamera(null);
+					
+					ui.removeChild(video);
+					
+					video = null;
+				}
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:Rect left="0" right="0" top="0" bottom="0">
+		<s:fill>
+			<s:SolidColor color="#AEABAB"/>
+		</s:fill>
+	</s:Rect>
+	
+	<mx:UIComponent id="ui"/>
+	
+</s:Group>

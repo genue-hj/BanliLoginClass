@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<common:ContentView xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark"  
+					xmlns:mx="library://ns.adobe.com/flex/mx"
+					xmlns:common="view.common.*" left="0" top="0" bottom="0" right="0" 
+					xmlns:login="view.login.*" xmlns:buttons="view.common.buttons.*" 
+					xmlns:tools="view.login.tools.*" xmlns:input="view.login.input.*" >
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.system.fscommand;
+			
+			protected function onBtnHandler(event:MouseEvent):void
+			{
+				btnSet.selected = event.target == btnSet;
+				btnShare.selected = event.target == btnShare;
+				btnLogin.selected = event.target == btnLogin;
+				
+				if(btnSet.selected)
+				{
+					setView.invalidate();
+				}else
+				{
+					setView.onDestroy();
+				}
+			}
+			
+			override public function onDestroy():void
+			{
+				setView.onDestroy();
+			}
+			
+			protected function btnQuit_clickHandler(event:MouseEvent):void
+			{
+				try
+				{
+					ExternalInterface.call("onQuit");
+				} 
+				catch(error:Error) 
+				{
+					
+				}
+				
+				//fscommand("onQuit");
+			}
+			
+			public function reset():void
+			{
+				commitView.reset();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<login:LoginCommitView id="commitView" visible="{btnLogin.selected}" width="350" height="450" horizontalCenter="0" verticalCenter="0"  />
+	
+	<login:LoginSetView id="setView" visible="{btnSet.selected}" verticalCenter="0" horizontalCenter="0" />
+	
+	<login:LoginShareListView id="shareView" visible="{btnShare.selected}" verticalCenter="0" horizontalCenter="0" />
+	
+	<s:HGroup gap="20" bottom="50" left="50">
+		
+		<tools:LoginButton id="btnSet" click="onBtnHandler(event)"  icon="@Embed('assets/login/icon_bord_set.png')"   />
+		
+		<tools:LoginButton id="btnShare" click="onBtnHandler(event)" icon="@Embed('assets/login/icon_share_course.png')"   />
+		
+		<tools:LoginButton id="btnLogin" click="onBtnHandler(event)" selected="true" icon="@Embed('assets/login/icon_user_login.png')"   />
+		
+	</s:HGroup>
+	
+	<tools:LoginButton id="btnQuit" click="btnQuit_clickHandler(event)" bottom="50" right="50" icon="@Embed('assets/login/icon_quit.png')"   />
+	
+	
+</common:ContentView>

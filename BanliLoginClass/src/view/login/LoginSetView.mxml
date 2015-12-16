@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:tools="view.login.tools.*"
+		 width="900" height="600" creationComplete="onCreatComplete(event)" horizontalCenter="0"
+		 verticalCenter="0">
+	<fx:Script>
+		<![CDATA[
+			import com.doer.config.AppConf;
+			import com.doer.config.ComplexConf;
+			import com.doer.config.ScreenParams;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			private var cameraData:ArrayCollection = null;
+			
+			[Bindable]
+			private var micData:ArrayCollection = null;
+			
+			public function onDestroy():void
+			{
+				video1.onDestroy();
+				video2.onDestroy();
+				
+				micToolBox.onDestroy();
+			}
+			
+			public function invalidate():void
+			{
+				video1.setCamera();
+				video2.setCamera();
+				
+				micToolBox.setMicphone();
+			}
+			
+			protected function onCombox1Handler(event:IndexChangeEvent):void
+			{
+				ComplexConf.mainCameraIndex = combox1.selectedItem.index;
+				
+				video1.setCamera();
+			}
+			
+			protected function onCombox2Handler(event:IndexChangeEvent):void
+			{
+				ComplexConf.subCameraIndex = combox2.selectedItem.index;;
+				
+				video2.setCamera();
+			}
+			
+			
+			
+			protected function onCreatComplete(event:FlexEvent):void
+			{
+				
+				invalidateCamerIndex();
+				
+				var cNames:Array = new Array();
+				
+				for(var i:int = 0; i < Camera.names.length; i ++)
+				{
+					if(Camera.names[i] != AppConf.vituralCameraName)
+						cNames.push({label : Camera.names[i], index : i});
+				}
+				
+				cameraData = new ArrayCollection(cNames);
+				
+				for(i = 0; i < cNames.length; i ++)
+				{
+					if(cNames[i].index == ComplexConf.mainCameraIndex)
+						combox1.selectedIndex = i;
+					if(cNames[i].index == ComplexConf.subCameraIndex)
+						combox2.selectedIndex = i;
+				}
+				
+				micData = new ArrayCollection(Microphone.names);
+				
+				micBox.selectedIndex = ComplexConf.micphoneIndex;
+				
+				if(ComplexConf.videoDetail1 == ComplexConf.VIDEO_4_3)
+				{
+					btnDetail1.selected = false;
+					btnDetail2.selected = true;
+				}else
+				{
+					btnDetail1.selected = true;
+					btnDetail2.selected = false;
+				}
+				
+			}
+			
+			private function invalidateCamerIndex():void
+			{
+				if(ComplexConf.mainCameraIndex == -1)
+				{
+					for(var i:int = 0; i < Camera.names.length; i ++)
+					{
+						if(Camera.names[i] != AppConf.vituralCameraName)
+						{
+							ComplexConf.mainCameraIndex = i;
+							break;
+						}
+						
+					}
+				}
+				
+				if(ComplexConf.subActiveScreen == -1)
+				{
+					for(i = 0; i < Camera.names.length; i ++)
+					{
+						if(Camera.names[i] != AppConf.vituralCameraName && i != ComplexConf.mainCameraIndex)
+						{
+							ComplexConf.subCameraIndex = i;
+							break;
+						}
+						
+					}
+				}
+				
+				if(ComplexConf.subCameraIndex == -1)
+					ComplexConf.subCameraIndex = ComplexConf.mainCameraIndex;
+				
+			}
+			
+			protected function onMicBoxHandler(event:IndexChangeEvent):void
+			{
+				ComplexConf.micphoneIndex = micBox.selectedIndex;
+				
+				micToolBox.setMicphone();
+			}
+			
+			protected function onBtn1Handler(event:MouseEvent):void
+			{
+				btnDetail1.selected = true;
+				btnDetail2.selected = false;
+				
+				ComplexConf.videoDetail1 = ComplexConf.VIDEO_16_9;
+				
+				video1.setCamera();
+				video2.setCamera();
+			}
+			
+			protected function onBtn2Handler(event:MouseEvent):void
+			{
+				btnDetail1.selected = false;
+				btnDetail2.selected = true;
+				
+				ComplexConf.videoDetail1 = ComplexConf.VIDEO_4_3;
+				
+				video1.setCamera();
+				video2.setCamera();
+			}
+			
+			protected function onModeHandler(event:MouseEvent):void
+			{
+				if(ComplexConf.screens.length <= 1)
+				{
+					ComplexConf.screenMode = ScreenParams.SCREEN_SINGLE_LEFT;
+				}else
+					ComplexConf.screenMode = event.target.name;
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:Rect left="0" right="0" top="0" bottom="0" radiusX="8" radiusY="8">
+		<s:fill>
+			<s:SolidColor alpha="0.9" color="0xffffff"/>
+		</s:fill>
+		
+		<s:stroke>
+			<s:SolidColorStroke color="#A9A9A9"/>
+		</s:stroke>
+		
+	</s:Rect>
+	
+	<s:Group left="0" top="0" bottom="0" width="450">
+		
+		<s:Group left="0" right="0" top="0" height="300">
+			
+			<s:Label top="10" color="#4A4945" fontSize="16" horizontalCenter="0" text="主摄像头视频"/>
+			
+			<s:ComboBox id="combox1" left="20" top="30" width="150" change="onCombox1Handler(event)"
+						dataProvider="{cameraData}" prompt="视频输入设备"/>
+			
+			<s:Group left="0" right="0" top="60" height="240">
+				
+				<s:VGroup left="20" top="0" gap="10">
+					
+					<tools:LoginSelectedButton id="btnDetail1" width="80" height="30" label="16 : 9"
+											   click="onBtn1Handler(event)" selected="false"/>
+					<tools:LoginSelectedButton id="btnDetail2" width="80" height="30" label="4 : 3"
+											   click="onBtn2Handler(event)" selected="true"/>
+					
+				</s:VGroup>
+				
+				
+				
+				<tools:LoginCameraContent id="video1" right="0" top="0"/>
+				
+			</s:Group>
+			
+			
+		</s:Group>
+		
+		<s:Group left="0" right="0" bottom="0" height="300">
+			
+			<s:VGroup left="20" top="20" gap="10">
+				
+				<tools:LoginSelectedButton id="btnDoubleL" width="100" height="30" name="{ScreenParams.SCREEN_DOUBLE_LEFT}"
+										   label="双显示（左）" click="onModeHandler(event)"
+										   selected="{ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_LEFT}"/>
+				<tools:LoginSelectedButton id="btnDoubleM" width="100" height="30" name="{ScreenParams.SCREEN_DOUBLE_MIDDLE}"
+										   selected="{ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_MIDDLE}"
+										   label="双显示（中）" click="onModeHandler(event)"/>
+				
+				<tools:LoginSelectedButton id="btnDoubleR" width="100" height="30" name="{ScreenParams.SCREEN_DOUBLE_RIGHT}"
+										   selected="{ComplexConf.screenMode == ScreenParams.SCREEN_DOUBLE_RIGHT}"
+										   label="双显示（右）" click="onModeHandler(event)"/>
+				
+			</s:VGroup>
+			
+			<s:VGroup left="150" top="20" gap="10">
+				
+				<tools:LoginSelectedButton id="btnSingleL" width="100" height="30" name="{ScreenParams.SCREEN_SINGLE_LEFT}"
+										   selected="{ComplexConf.screenMode == ScreenParams.SCREEN_SINGLE_LEFT}"
+										   label="单显示(左)" click="onModeHandler(event)"
+										   />
+				<tools:LoginSelectedButton id="btnSingleR" width="100" height="30" name="{ScreenParams.SCREEN_SINGLE_RIGHT}"
+										   selected="{ComplexConf.screenMode == ScreenParams.SCREEN_SINGLE_RIGHT}"
+										   label="单显示(右)" click="onModeHandler(event)"/>
+			</s:VGroup>
+			
+			
+			<s:Image right="20" bottom="50" source="@Embed('assets/login/icon_promit.png')"/>
+			
+			
+		</s:Group>
+		
+		
+	</s:Group>
+	
+	<s:Group right="0" top="0" bottom="0" width="450">
+		
+		<s:Group left="0" right="0" top="0" height="300">
+			
+			<s:Label top="10" color="#4A4945" fontSize="16" horizontalCenter="0" text="辅摄像头视频"/>
+			
+			<s:ComboBox id="combox2" right="20" top="30" width="150" change="onCombox2Handler(event)"
+						dataProvider="{cameraData}" prompt="视频输入设备"/>
+			
+			<s:Group left="0" right="0" top="60" height="240">
+				
+				<tools:LoginCameraContent id="video2" left="0" top="0" isSubCamera="true"/>
+				
+				
+			</s:Group>
+			
+		</s:Group>
+		
+		<s:Group left="0" right="0" bottom="0" height="300">
+			
+			<s:Label top="16" color="#4A4945" fontSize="16" horizontalCenter="0" text="音频输入"/>
+			
+			<s:ComboBox id="micBox" top="46" width="150" change="onMicBoxHandler(event)"
+						dataProvider="{micData}" horizontalCenter="0" prompt="音频输入设备"/>
+			<s:Label left="80" top="50" color="#4A4945" fontSize="14" text="选择设备"/>
+			<s:Label top="114" color="#4A4945" fontSize="14" horizontalCenter="-12" text="请对着麦克风说话，"/>
+			<s:Label top="135" color="#4A4945" fontSize="14" horizontalCenter="0" text="如有波形表示输入正常。"/>
+			
+			<tools:LoginMicView id="micToolBox" left="81" top="155" width="220"/>
+		</s:Group>
+		
+		
+	</s:Group>
+	
+	
+</s:Group>

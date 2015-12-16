@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"  creationComplete="invalidate()"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" left="0" right="0" top="0" bottom="0" xmlns:view="view.*" >
+	<fx:Script>
+		<![CDATA[
+			import com.doer.config.AppConf;
+			import com.doer.config.ComplexConf;
+			import com.doers.utils.ScheduleEvent;
+			
+			import flash.utils.setInterval;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			
+			private var loader:URLLoader = null;
+		
+			private var personName:String = null;
+			
+			protected function invalidate():void
+			{
+				
+				(FlexGlobals.topLevelApplication as EventDispatcher).addEventListener(ScheduleEvent.Schedule_Refresh,onFresh);
+				
+				content.currentState = "desktop";
+				
+				onFresh(null);
+			}
+			
+			private function onFresh(e:ScheduleEvent):void
+			{
+				if(loader == null)
+				{
+					loader = new URLLoader();
+					
+					var header:URLRequestHeader = new URLRequestHeader("ascookie",AppConf.session);
+					
+					var url:URLRequest = new URLRequest();
+					url.method = URLRequestMethod.POST;
+					url.url = "http://" + AppConf.webAddr + "/lesson/extra-list-data.htm";
+					url.requestHeaders.push(header);
+					
+					var value:URLVariables = new URLVariables();
+					
+					value['startDate'] = getFirstDay();
+					value['endDate'] = getLastDay();
+					value['institutionId'] = ComplexConf.institutionId;
+					
+					url.data = value;
+					
+					loader.load(url);
+					
+					loader.addEventListener(Event.COMPLETE,onLoadComplete);
+				}
+			}
+			
+			private function getFirstDay():String
+			{
+				var date:Date = new Date();
+				
+				var date2:Date = new Date(date.time - 24 * 60 * 60 * 1000 * date.day);
+				
+				return date2.fullYear + "-" + getNumStr(date2.month + 1) + "-" + getNumStr(date2.date);
+			}
+			
+			private function getLastDay():String
+			{
+				var date:Date = new Date();
+				
+				var date2:Date = new Date(date.time + 24 * 60 * 60 * 1000 * (6 - date.day));
+				
+				return date2.fullYear + "-" + getNumStr(date2.month + 1) + "-" + getNumStr(date2.date);
+			}
+			
+			private function getNumStr(num:Number):String
+			{
+				if(num < 10)
+					return "0" + num;
+				
+				return num.toString();
+			}
+			
+			protected function onLoadComplete(e:Event):void
+			{
+				
+				loader.removeEventListener(Event.COMPLETE,onLoadComplete);
+				
+				var data:Object = JSON.parse(loader.data);
+				
+				content.onDestroy();
+				
+				content.invalidateByData(data as Array);
+				
+				content.subNav.avatar.personName = personName;
+				
+				loader = null;
+			}
+			
+			public function setPersonInfo(name:String):void
+			{
+				personName = name;
+			}	
+			
+			public function onDestroy():void
+			{
+				(FlexGlobals.topLevelApplication as EventDispatcher).removeEventListener(ScheduleEvent.Schedule_Refresh,onFresh);
+				content.onDestroy();
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<view:Schedule id="content" left="0" right="0" top="0" bottom="0" />
+	
+</s:Group>

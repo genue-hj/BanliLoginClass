@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" buttonMode="true" mouseChildren="false"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable]
+			public var selected:Boolean = false;
+			
+			[Bindable]
+			public var label:String = null;
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:Rect left="0" right="0" top="0" bottom="0" radiusX="4" radiusY="4">
+		<s:fill>
+			<s:SolidColor color="{selected ? 0xa1ddd2 : 0xffffff}"  />
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="#c6c6c6" />
+		</s:stroke>
+	</s:Rect>
+	
+	<s:Label color="#4A4945" fontSize="14" horizontalCenter="0" text="{label}" verticalCenter="0"/>
+	
+</s:Group>

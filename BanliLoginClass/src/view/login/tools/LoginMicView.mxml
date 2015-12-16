@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="270" height="35" xmlns:tools="view.login.tools.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.doer.config.ComplexConf;
+			
+			private var mic:Microphone = null;
+			
+			public function setMicphone():void
+			{
+				if(mic != null)
+					onDestroy();
+				
+				mic = Microphone.getEnhancedMicrophone(ComplexConf.micphoneIndex);
+				
+				mic.setLoopBack();
+				
+				addEventListener(Event.ENTER_FRAME,onFrame);
+				
+			}
+			
+			public function onDestroy():void
+			{
+				if(mic != null)
+				{
+					mic.setLoopBack(false);
+					
+					removeEventListener(Event.ENTER_FRAME,onFrame);
+					
+					mic = null;
+				}
+				
+			}
+			
+			
+			private function onFrame(e:Event):void
+			{
+				setWave(Math.round(mic.activityLevel / 100) + 1);
+			}
+			
+			private function setWave(wave:int):void
+			{
+				for(var i:int = 1; i <= 10; i ++ )
+				{
+					this["w" + i].selected = i <= wave;
+				}
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:Image source="@Embed('assets/login/icon_mic.png')" verticalCenter="0" left="0" />
+	
+	<s:HGroup left="50" gap="10" verticalCenter="0">
+		
+		<tools:LoginMicWave id="w1" />
+		
+		<tools:LoginMicWave id="w2" />
+		
+		<tools:LoginMicWave id="w3"/>
+		
+		<tools:LoginMicWave id="w4"/>
+		
+		<tools:LoginMicWave id="w5"/>
+		
+		<tools:LoginMicWave id="w6"/>
+		
+		<tools:LoginMicWave id="w7"/>
+		
+		<tools:LoginMicWave id="w8"/>
+		
+		<tools:LoginMicWave id="w9"/>
+		
+		<tools:LoginMicWave id="w10"/>
+		
+	</s:HGroup>
+	
+</s:Group>

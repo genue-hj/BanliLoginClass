@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300" xmlns:tools="view.login.tools.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.doer.config.ComplexConf;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			
+			
+			public function invalidate(schoolList:Array):void
+			{
+				var share:SharedObject = SharedObject.getLocal("user","/");
+				
+				
+				schoolInput.listData = new ArrayCollection(schoolList);
+				
+				passwordInput.input.text = share.data['bordPassword'];
+				
+				for(var i:int = 0; i < schoolList.length; i ++)
+				{
+					if(schoolList[i].id == share.data["bordInstitutionId"])
+					{
+						schoolInput.combox.selectedIndex = i;
+						return;
+					}
+					
+				}
+				
+				schoolInput.combox.selectedIndex = 0;
+				
+				
+			}
+			
+			protected function onClick(event:MouseEvent):void
+			{
+				
+				var share:SharedObject = SharedObject.getLocal("user","/");
+				
+				var data:Object = share.data;
+				
+				data['bordPassword'] = passwordInput.input.text;
+				
+				data['bordInstitutionId'] = schoolInput.combox.selectedItem.id;
+				
+				share.flush();
+				
+				ComplexConf.bordAccount = passwordInput.input.text;
+				ComplexConf.institutionId = schoolInput.combox.selectedItem.id;
+				
+				(FlexGlobals.topLevelApplication as BanliLoginClass).onLoginInputComplete();
+			}
+			
+			
+			
+			
+		]]>
+	</fx:Script>
+	
+	<s:Rect left="0" right="0" top="0" bottom="0" radiusX="8" radiusY="8">
+		<s:fill>
+			<s:SolidColor color="0xffffff" alpha="0.8" />
+		</s:fill>
+		
+		<s:stroke>
+			<s:SolidColorStroke color="#A9A9A9" />
+		</s:stroke>
+		
+	</s:Rect>
+	
+	
+	<s:Group id="panel1" width="100%" height="100%" showEffect="moveIn" hideEffect="moveOut">
+		
+		<s:VGroup  horizontalCenter="-10" verticalCenter="0" gap="20" horizontalAlign="right">
+			
+			<tools:LoginSelector id="schoolInput" icon="@Embed('assets/login/login_icon_school.png')" />
+
+			<tools:LoginInput prompt="白板序列号" id="passwordInput" passwordMode="true" icon="@Embed('assets/login/login_icon_lock.png')"  />
+			
+			<s:Button x="52" width="200" height="30" label="登         录"  color="#A9A9A9" buttonMode="true" click="onClick(event)"
+					  fontSize="16" fontWeight="bold" skinClass="skins.login.ButtonSkin"/>
+			
+		</s:VGroup>
+		
+		<s:Image id="btnChange" buttonMode="true" right="0" top="0" source="@Embed('assets/login/icon_user_change.png')"/>
+		
+		<s:Label top="10"  fontSize="16" horizontalCenter="0" text="白板账户登录"/>
+		
+		
+	</s:Group>
+	
+</s:Group>
